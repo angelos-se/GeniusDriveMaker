@@ -7,6 +7,8 @@ So I decided I'd rewrite the script:
 4. And have some fun…
 
 Logic:
+0. Check if the prerequisites of the script is met
+0.1. Currently there will only be warning if prerequisites are not met
 1. Get the list of DMG files in working directory
 2. Get the list of connected disks
 2.1. Remove the boot drive and internal disk from list
