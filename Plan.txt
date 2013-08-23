@@ -1,0 +1,19 @@
+The current shell script used to image drive at workplace has grown so chaotic that no one can meaningfully maintain it any more. (Adding a new DMG file or new model of hard drive means editing the script to take care of something that could have been programmed instead of hard coded...)
+
+So I decided I'd rewrite the script:
+1. Using a more maintainable language;
+2. Trim the unwanted features;
+3. Explore ways of speeding up imaging;
+4. And have some fun…
+
+Logic:
+1. Get the list of DMG files in working directory
+2. Get the list of connected disks
+2.1. Remove the boot drive and internal disk from list
+3. Partition & image the disks
+3.1. Get the list of partions
+3.2. Compare with DMG list
+3.3. Check for missing patitions
+3.4. Create requried partitions and restore => Back to 3.2
+
+The whole part 3 looks good for parallelization.
