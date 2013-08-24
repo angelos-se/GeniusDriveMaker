@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import os, sys, subprocess
+import os, sys, subprocess, pickle
 
 def main():
     DMGList = []
@@ -32,11 +32,11 @@ def main():
     # Part 2
     import xml.etree.ElementTree as plist
     DiskPlist = plist.parse('Disks.plist').getroot() # Hard coded temporarily
+
     if DiskPlist[0][6].text != 'WholeDisks':
         print 'Diskutil generated unexpected output, exiting...'
         sys.exit(4)
-    for disk in DiskPlist[0][7]:
-        DiskList.append(disk.text)
+    for disk in DiskPlist[0][7]: DiskList.append(disk.text)
     print 'Found disks: ', DiskList
 
 if __name__ == "__main__": main()
