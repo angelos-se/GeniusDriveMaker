@@ -4,6 +4,7 @@ import os, sys, subprocess, pickle
 def main():
     DMGList = []
     DiskList = []
+    IgnoreList = ['disk0', 'disk2']
 
     # Part 0
     try: osxVerNum = subprocess.check_output("sw_vers | grep 10. | awk '{ FS = \" \" } ; { print $2 }'", shell=True).strip().split('.')
@@ -54,6 +55,7 @@ def main():
 	
 	#DiskPlist = plist.parse('Disks.plist').getroot() # Hard coded temporarily	
 	for disk in DiskPlist[0][7]: DiskList.append(disk.text)
+	for disk in IgnoreList: DiskList.remove(disk)
 	print 'Found disks: ', DiskList
 
 if __name__ == "__main__": main()
