@@ -4,13 +4,17 @@ import os, sys, subprocess, pickle
 def main():
     DMGList = []
     DiskList = []
-    IgnoreList = ['disk0', 'disk2']
+    RAIDList = []
+    RAIDSetList = []
+    MountedDMGList = []
+
+    IgnoreList = ['disk0']
 
     # Part 0
     try: osxVerNum = subprocess.check_output("sw_vers | grep 10. | awk '{ FS = \" \" } ; { print $2 }'", shell=True).strip().split('.')
     except: osxVer = False
     else:
-    	try: osxVer = int(osxVerNum[1]) >= 8 and int(osxVerNum[2]) >= 0
+    	try: osxVer = int(osxVerNum[1]) >= 7 and int(osxVerNum[2]) >= 0
     	except: osxVer = False
 
     try:
@@ -55,7 +59,40 @@ def main():
 	
 	#DiskPlist = plist.parse('Disks.plist').getroot() # Hard coded temporarily	
 	for disk in DiskPlist[0][7]: DiskList.append(disk.text)
+	
+	try:
+		output = subprocess.check_output("diskutil ar list | grep Online | grep disk | awk '{ FS = \" \" } ; { print $2 }'", shell=True).split()
+	except:
+		print 'Cannot get Apple RAID list...'
+		sys.exit(6)
+	else: 
+		for RAIDDisk in output:
+			RAIDList.append(RAIDDisk[:RAIDDisk.rfind('s')])
+		#print 'Disks in RAID: ', RAIDList
+	
+	try:
+		output =  subprocess.check_output('diskutil ar list | grep "Device Node"', shell=True).split()
+	except:
+		print 'Cannot get Apple RAID list...'
+		sys.exit(6)
+	else: 
+		for RAIDSet in output:
+			if 'disk' in RAIDSet : RAIDSetList.append(RAIDSet)
+
+	try:
+		 output = subprocess.check_output('mount | grep "mounted by apple"', shell=True).split()
+	except:
+		print 'Cannot get mounted images...'
+		sys.exit(7)
+	else:
+		for MountedDMG in output:
+			if '/dev/disk' in MountedDMG: MountedDMGList.append(MountedDMG[5:MountedDMG.rfind('s')])
+		#print 'Mounted images: ', MountedDMGList
+	
 	for disk in IgnoreList: DiskList.remove(disk)
+	for disk in RAIDList: DiskList.remove(disk)
+	for disk in RAIDSetList: DiskList.remove(disk)
+	for disk in MountedDMGList: DiskList.remove(disk)
 	print 'Found disks: ', DiskList
 
 if __name__ == "__main__": main()
