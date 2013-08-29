@@ -4,7 +4,6 @@ from MacDisk import *
 
 def main():
     DMGList = []
-    DiskList = []
     RAIDList = []
     RAIDSetList = []
     MountedDMGList = []
@@ -12,9 +11,8 @@ def main():
     IgnoreList = ['disk0']
 
     # Part 0
-
-	
-    #else: print 'Good, we are on Darwin, found Disk Utility and have Python 2.7 or better!'
+    DiskUtil = MacDiskutil()
+	# Includes version check during class initialization, defaults: (reqOSXVer='10.7.0', PyVer='2.7')
 
     # Part 1
     print 'Current working directory is: ', os.getcwd()
@@ -23,8 +21,7 @@ def main():
     print 'Found DMGs: ', DMGList
     
     # Part 2
-    
-    DiskList = MacDisk.getWholeDisks()
+    DiskList = DiskUtil.getWholeDisks()
     
     try:
         output = subprocess.check_output("diskutil ar list | grep Online | grep disk | awk '{ FS = \" \" } ; { print $2 }'", shell=True).split()
