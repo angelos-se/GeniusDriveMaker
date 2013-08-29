@@ -63,7 +63,7 @@ def main():
 	try:
 		output = subprocess.check_output("diskutil ar list | grep Online | grep disk | awk '{ FS = \" \" } ; { print $2 }'", shell=True).split()
 	except:
-		print 'Cannot get Apple RAID list...'
+		print 'Cannot get Apple RAID Disks...'
 		sys.exit(6)
 	else: 
 		for RAIDDisk in output:
@@ -71,10 +71,10 @@ def main():
 		#print 'Disks in RAID: ', RAIDList
 	
 	try:
-		output =  subprocess.check_output('diskutil ar list | grep "Device Node"', shell=True).split()
+		output =  subprocess.check_output('diskutil ar list | grep "Device Node" | awk \'{ print $3 }\'', shell=True).split()
 	except:
-		print 'Cannot get Apple RAID list...'
-		sys.exit(6)
+		print 'Cannot get Apple RAID Sets...'
+		sys.exit(7)
 	else: 
 		for RAIDSet in output:
 			if 'disk' in RAIDSet : RAIDSetList.append(RAIDSet)
@@ -82,8 +82,7 @@ def main():
 	try:
 		 output = subprocess.check_output('mount | grep "mounted by apple"', shell=True).split()
 	except:
-		print 'Cannot get mounted images...'
-		sys.exit(7)
+		output = ""
 	else:
 		for MountedDMG in output:
 			if '/dev/disk' in MountedDMG: MountedDMGList.append(MountedDMG[5:MountedDMG.rfind('s')])
