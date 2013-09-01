@@ -32,7 +32,7 @@ class MacDiskutil(object):
         elif not pyVer27: raise PythonVerCheck()
 
     def getWholeDisks(self):
-    	WholeDisks = []
+        WholeDisks = []
         try: output = subprocess.check_output(['diskutil', 'list', '-plist'])
         except: raise
         else:
@@ -40,7 +40,62 @@ class MacDiskutil(object):
                 DiskPlist = plist.fromstring(output)
             except: raise
             else:
-            	if DiskPlist[0][6].text != 'WholeDisks':
-            	    raise UnexpectedOutput()
+                if DiskPlist[0][6].text != 'WholeDisks':
+                    raise UnexpectedOutput()
         for disk in DiskPlist[0][7]: WholeDisks.append(disk.text)
         return WholeDisks
+
+    def getAppleRAIDDisks(self):
+        RAIDDisks = []
+        try:
+            output = subprocess.check_output("diskutil ar list | grep Online | grep disk | awk '{ FS = \" \" } ; { print $2 }'", shell=True).split()
+        except: raise
+        else: 
+            for RAIDDisk in output: RAIDDisks.append(RAIDDisk[:RAIDDisk.rfind('s')])
+        return RAIDDisks
+
+    def getAppleRAIDSets(self):
+        RAIDSets = []
+        try:
+            output =  subprocess.check_output('diskutil ar list | grep "Device Node" | awk \'{ print $3 }\'', shell=True).split()
+        except: raise
+        else: 
+            for RAIDSet in output:
+                if 'disk' in RAIDSet : RAIDSets.append(RAIDSet)
+        return RAIDSets
+
+    def getMountedImages(self):
+        MountedDMGs = []
+        try:
+             output = subprocess.check_output('mount | grep "mounted by "', shell=True).split()
+        except: output = ""
+        else:
+            for MountedDMG in output:
+                if '/dev/disk' in MountedDMG: MountedDMGs.append(MountedDMG[5:MountedDMG.rfind('s')])
+        return MountedDMGs
+
+    def getCoreStorageAllDisks(self):
+        CoreStorageAllDisks = []
+        try:
+            output = subprocess.check_output('diskutil cs list | grep Disk', shell=True).split('Disk:')
+        except: output = ""
+        else:
+            for CSDisk in output:
+                if 's' in CSDisk:
+            	    if CSDisk.find('s') == CSDisk.rfind('s'): CoreStorageAllDisks.append(CSDisk[CSDisk.find('disk'):].strip())
+            	    else: CoreStorageAllDisks.append(CSDisk[CSDisk.find('disk'):CSDisk.rfind('s')])
+        return CoreStorageAllDisks
+
+
+    def getMediaNameByNode(self, dev=""):
+        try:
+            output = subprocess.check_output('diskutil info ' + dev+ ' | grep "Media Name:"', shell=True)
+        except: raise
+        else:
+        	return output[output.find("Name:")+5:].strip()
+
+    def getMediaNameForList(self, devList=[]):
+        MediaNameDict = {}
+        for dev in devList:
+        	MediaNameDict[dev] = self.getMediaNameByNode(dev)
+        return MediaNameDict

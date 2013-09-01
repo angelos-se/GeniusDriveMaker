@@ -4,57 +4,39 @@ from MacDisk import *
 
 def main():
     DMGList = []
-    RAIDList = []
     RAIDSetList = []
     MountedDMGList = []
 
-    IgnoreList = ['disk0']
+#    IgnoreList = [] # Debug use
+    IgnoreList = ['disk0'] # Internal disk
 
     # Part 0
     DiskUtil = MacDiskutil()
 	# Includes version check during class initialization, defaults: (reqOSXVer='10.7.0', PyVer='2.7')
 
     # Part 1
-    print 'Current working directory is: ', os.getcwd()
+    print 'Current working directory: ', os.getcwd()
     for fileName in os.listdir(os.getcwd()):
         if '.dmg' in fileName[-4:].lower(): DMGList.append(fileName)
     print 'Found DMGs: ', DMGList
     
     # Part 2
     DiskList = DiskUtil.getWholeDisks()
+#    print 'All disks: ', DiskList # Debug use
+    RAIDDiskList = DiskUtil.getAppleRAIDDisks()
+    RAIDSetList = DiskUtil.getAppleRAIDSets()
+    MountedDMGList = DiskUtil.getMountedImages()
+    CSDiskList = DiskUtil.getCoreStorageAllDisks()
     
-    try:
-        output = subprocess.check_output("diskutil ar list | grep Online | grep disk | awk '{ FS = \" \" } ; { print $2 }'", shell=True).split()
-    except:
-        print 'Cannot get Apple RAID Disks...'
-        sys.exit(6)
-    else: 
-        for RAIDDisk in output:
-            RAIDList.append(RAIDDisk[:RAIDDisk.rfind('s')])
-        #print 'Disks in RAID: ', RAIDList
+    for disk in RAIDDiskList: IgnoreList.append(disk)
+    for disk in RAIDSetList: IgnoreList.append(disk)
+    for disk in MountedDMGList: IgnoreList.append(disk)
+    for disk in CSDiskList: IgnoreList.append(disk)
+    for disk in set(IgnoreList): DiskList.remove(disk)
     
-    try:
-        output =  subprocess.check_output('diskutil ar list | grep "Device Node" | awk \'{ print $3 }\'', shell=True).split()
-    except:
-        print 'Cannot get Apple RAID Sets...'
-        sys.exit(7)
-    else: 
-        for RAIDSet in output:
-            if 'disk' in RAIDSet : RAIDSetList.append(RAIDSet)
-
-    try:
-         output = subprocess.check_output('mount | grep "mounted by apple"', shell=True).split()
-    except:
-        output = ""
-    else:
-        for MountedDMG in output:
-            if '/dev/disk' in MountedDMG: MountedDMGList.append(MountedDMG[5:MountedDMG.rfind('s')])
-        #print 'Mounted images: ', MountedDMGList
-    
-    for disk in IgnoreList: DiskList.remove(disk)
-    for disk in RAIDList: DiskList.remove(disk)
-    for disk in RAIDSetList: DiskList.remove(disk)
-    for disk in MountedDMGList: DiskList.remove(disk)
-    print 'Found disks: ', DiskList
+    print 'Valid disks:'
+    DiskNameList = DiskUtil.getMediaNameForList(DiskList)
+    for key, value in DiskNameList.iteritems():
+        print key, ": ", value 
 
 if __name__ == "__main__": main()
