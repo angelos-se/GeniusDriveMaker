@@ -12,7 +12,7 @@ Logic:
 1. Get the list of DMG files in working directory
 2. Get the list of connected disks
 2.1. Remove the boot drive and internal disk from list
-3. Partition & image the disks
+3. Partition & image the disks (using gpt)
 3.1. Get the list of partions
 3.2. Compare with DMG list
 3.3. Check for missing patitions
