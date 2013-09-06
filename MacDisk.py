@@ -87,7 +87,9 @@ class MacDiskutil(object):
         except: output = ''
         else:
             for MountedDMG in output:
-                if '/dev/disk' in MountedDMG: MountedDMGs.append(MountedDMG[5:MountedDMG.rfind('s')])
+                if '/dev/disk' in MountedDMG: 
+                    if MountedDMG.find('s') == MountedDMG.rfind('s'): MountedDMGs.append(MountedDMG[MountedDMG.find('disk'):].strip())
+                    else: MountedDMGs.append(MountedDMG[MountedDMG.find('disk'):MountedDMG.rfind('s')].strip())
         return MountedDMGs
 
     def getCoreStorageAllDisks(self):
@@ -114,3 +116,20 @@ class MacDiskutil(object):
         for dev in devList:
             MediaNameDict[dev] = self.getMediaNameByNode(dev)
         return MediaNameDict
+    
+    def getSizeForFile(self, fileName=''):
+        if fileName == '':
+            return None
+        else:
+            try:
+                output = subprocess.check_output(['ls', '-al', fileName])
+            except: raise
+            else:
+                return int(output.split()[4])
+    
+    def getSizeForFiles(self, dmgList=[]):
+        DMGListDict = {}
+        for dmg in dmgList:
+            DMGListDict[dmg] = self.getSizeForFile(dmg)
+        return DMGListDict
+            
