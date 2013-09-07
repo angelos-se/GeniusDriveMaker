@@ -15,12 +15,12 @@ def main():
 	# Includes version check during class initialization, defaults: (reqOSXVer='10.7.0', PyVer='2.7')
 
     # Part 1
-    print 'Current working directory: ', os.getcwd()
+    print 'Current working directory:', os.getcwd()
     for fileName in os.listdir(os.getcwd()):
         if '.dmg' in fileName[-4:].lower(): DMGFileList.append(fileName)
 
     DMGSizeDict = DiskUtil.getSizeForFiles(DMGFileList)
-    print 'Found DMGs: ', DMGSizeDict
+    print 'Found DMGs:', DMGSizeDict
     
     # Part 2
     DiskList = DiskUtil.getWholeDisks()
@@ -46,10 +46,12 @@ def main():
     
 # Hopefully this is perm
     for disk, volName in DiskNameDict:
-        print volName, '('+disk+') will be erased: ', not DiskUtil.diskHasVolume(disk, RPartName)
+        print volName, '('+disk+') will be erased:', not DiskUtil.diskHasVolume(disk, RPartName)
+        if 'yes' != raw_input('Proceed? (yes/NO) ').lower(): sys.exit(1)
         if not DiskUtil.diskHasVolume(disk, RPartName):
             subprocess.call('diskutil eraseDisk JHFS+ ' + RPartName + ' GPT ' + disk, shell=True)
-        #print DiskUtil.getVolumeForDisk(disk)
+        
+        print DiskUtil.getVolumeForDisk(disk)
         	
 
 if __name__ == "__main__": main()
