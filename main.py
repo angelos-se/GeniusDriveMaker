@@ -1,12 +1,13 @@
 #!/usr/bin/python
- # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import os, sys, subprocess, pickle
 from MacDisk import *
 
 def main():
+    RPartName = 'Reserved'
     DMGFileList = []
 
-#    IgnoreList = ['disk4']
+#    IgnoreList = ['disk3']
     IgnoreList = []
 
     # Part 0
@@ -31,22 +32,28 @@ def main():
     IgnoreList.extend(DiskUtil.getCoreStorageAllDisks())
     
     for disk in set(IgnoreList): DiskList.remove(disk)
-    
-    print 'Valid disks:'
-    DiskNameList = DiskUtil.getMediaNameForList(DiskList)
-    for key, value in DiskNameList.iteritems():
-        print key, ': ', value 
+
+    DiskNameDict = DiskUtil.getMediaNameForList(DiskList).iteritems()
+#    print 'Valid disks:'
+#    for key, value in DiskNameDict.iteritems():
+#        print key, ': ', value 
 
 # Make shift solution
-    for disk in DiskNameList:
+    """for disk in DiskNameList:
         cmdString = 'diskutil partitionDisk ' + disk + ' GPTFormat '
         for dmg in DMGFileList:
             cmdString += 'JHFS+ ' + dmg[:-4] + ' ' + str(DMGSizeDict[dmg] *1.5) + 'B '
         cmdString += 'JHFS+ Free 1B'
-        print cmdString
+        print cmdString"""
     
     """sudo asr --source /Volumes/My\ Book\ VelociRaptor\ Duo/Users/apple/Desktop/Scripts/ASD/IMAGES/OS155.dmg --target /Volumes/OS155 --erase --noverify --noprompt"""
     
-    
+# Hopefully this is perm
+    for disk, volName in DiskNameDict:
+        print volName, '('+disk+') will be erased: ', not DiskUtil.diskHasVolume(disk, RPartName)
+        if not DiskUtil.diskHasVolume(disk, RPartName):
+            subprocess.call('diskutil eraseDisk JHFS+ ' + RPartName + ' GPT ' + disk, shell=True)
+        #print DiskUtil.getVolumeForDisk(disk)
+        	
 
 if __name__ == "__main__": main()
