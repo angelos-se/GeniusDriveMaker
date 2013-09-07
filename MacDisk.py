@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 import os, sys, subprocess, pickle
 import xml.etree.ElementTree as plist
 
@@ -7,6 +8,7 @@ class OSVerCheck(Exception): pass
 class PythonVerCheck(Exception): pass
 class DiskutilMissing(Exception): pass
 class CLIError(Exception): pass
+class InvalidParameter(Exception): pass
 
 class MacDiskutil(object):
     'A partial interface of Mac diskutil for Python'
@@ -50,7 +52,7 @@ class MacDiskutil(object):
         for dev in self.getWholeDisks():
             try:
                 output = subprocess.check_output('diskutil info ' + dev+ ' | grep "Internal:"', shell=True)
-            except: output = ''
+            except: raise
             else:
                 if 'Yes' in output: InternalDisks.append(dev)
         return InternalDisks
@@ -82,14 +84,12 @@ class MacDiskutil(object):
 
     def getMountedImages(self):
         MountedDMGs = []
-        try:
-             output = subprocess.check_output('mount | grep "mounted by "', shell=True).split()
-        except: output = ''
-        else:
-            for MountedDMG in output:
-                if '/dev/disk' in MountedDMG: 
-                    if MountedDMG.find('s') == MountedDMG.rfind('s'): MountedDMGs.append(MountedDMG[MountedDMG.find('disk'):].strip())
-                    else: MountedDMGs.append(MountedDMG[MountedDMG.find('disk'):MountedDMG.rfind('s')].strip())
+        for dev in self.getWholeDisks():
+            try:
+                output = subprocess.check_output('diskutil info ' + dev+ ' | grep "Protocol:"', shell=True)
+            except: raise
+            else:
+                if 'Disk Image' in output: MountedDMGs.append(dev)
         return MountedDMGs
 
     def getCoreStorageAllDisks(self):
@@ -104,7 +104,7 @@ class MacDiskutil(object):
                     else: CoreStorageAllDisks.append(CSDisk[CSDisk.find('disk'):CSDisk.rfind('s')])
         return CoreStorageAllDisks
 
-    def getMediaNameByNode(self, dev=""):
+    def getMediaNameByDev(self, dev=""):
         try:
             output = subprocess.check_output('diskutil info ' + dev+ ' | grep "Media Name:"', shell=True)
         except: raise
@@ -114,12 +114,12 @@ class MacDiskutil(object):
     def getMediaNameForList(self, devList=[]):
         MediaNameDict = {}
         for dev in devList:
-            MediaNameDict[dev] = self.getMediaNameByNode(dev)
+            MediaNameDict[dev] = self.getMediaNameByDev(dev)
         return MediaNameDict
     
     def getSizeForFile(self, fileName=''):
         if fileName == '':
-            return None
+            raise InvalidParameter()
         else:
             try:
                 output = subprocess.check_output(['ls', '-al', fileName])
@@ -127,9 +127,29 @@ class MacDiskutil(object):
             else:
                 return int(output.split()[4])
     
-    def getSizeForFiles(self, dmgList=[]):
-        DMGListDict = {}
-        for dmg in dmgList:
-            DMGListDict[dmg] = self.getSizeForFile(dmg)
-        return DMGListDict
-            
+    def getSizeForFiles(self, fileList=[]):
+        FileListDict = {}
+        for fileName in fileList:
+            FileListDict[fileName] = self.getSizeForFile(fileName)
+        return FileListDict
+        
+    def getVolumeForDisk(self, diskName=''):
+        VolumeList = []
+        try:
+            output = subprocess.check_output(['diskutil', 'list', diskName])
+        except: raise
+        else:
+            for line in output.split('\n'):
+                if 'Apple_HFS' in line: VolumeList.append(line.split()[2])
+            return VolumeList
+    
+    def diskHasVolume(self, diskName='', volName=''):
+        if diskName == '' or volName == '':
+            raise InvalidParameter()
+        else:
+            try:
+                output = subprocess.check_output('diskutil list ' + diskName + ' | grep ' + volName, shell=True)
+            except: return False
+            else:
+                if volName in output.split()[2]: return True
+                else: return False
