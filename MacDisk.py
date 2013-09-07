@@ -151,5 +151,5 @@ class MacDiskutil(object):
                 output = subprocess.check_output('diskutil list ' + diskName + ' | grep ' + volName, shell=True)
             except: return False
             else:
-                if volName in output.split()[2]: return True
+                if volName == output.split()[2]: return True
                 else: return False
