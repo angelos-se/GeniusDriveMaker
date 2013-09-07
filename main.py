@@ -24,7 +24,6 @@ def main():
     
     # Part 2
     DiskList = DiskUtil.getWholeDisks()
-#    print 'All disks: ', DiskList # Debug use
     IgnoreList.extend(DiskUtil.getInternalDisks())
     IgnoreList.extend(DiskUtil.getAppleRAIDAll())
     # There are other options for RAID, see MacDisk module for details
@@ -34,9 +33,6 @@ def main():
     for disk in set(IgnoreList): DiskList.remove(disk)
 
     DiskNameDict = DiskUtil.getMediaNameForList(DiskList).iteritems()
-#    print 'Valid disks:'
-#    for key, value in DiskNameDict.iteritems():
-#        print key, ': ', value 
 
 # Make shift solution
     """for disk in DiskNameList:
