@@ -35,17 +35,12 @@ class MacDiskutil(object):
 
     def getWholeDisks(self):
         WholeDisks = []
-        try: output = subprocess.check_output(['diskutil', 'list', '-plist'])
+        try: output = subprocess.check_output(['diskutil', 'list'])
         except: raise
         else:
-            try: 
-                DiskPlist = plist.fromstring(output)
-            except: raise
-            else:
-                if DiskPlist[0][6].text != 'WholeDisks':
-                    raise UnexpectedOutput()
-        for disk in DiskPlist[0][7]: WholeDisks.append(disk.text)
-        return WholeDisks
+            for line in output.split('\n'):
+                if line[0:5] == '/dev/': WholeDisks.append(line[5:].strip())
+            return WholeDisks
         
     def getInternalDisks(self):
         InternalDisks = []
@@ -134,13 +129,13 @@ class MacDiskutil(object):
         return FileListDict
         
     def getVolumeForDisk(self, diskName=''):
-        VolumeList = []
+        VolumeList = {}
         try:
             output = subprocess.check_output(['diskutil', 'list', diskName])
         except: raise
         else:
             for line in output.split('\n'):
-                if 'Apple_HFS' in line: VolumeList.append(line.split()[2])
+                if 'Apple_HFS' in line: VolumeList[line[33:57].strip()] = line[67:].strip()
             return VolumeList
     
     def diskHasVolume(self, diskName='', volName=''):
@@ -151,5 +146,5 @@ class MacDiskutil(object):
                 output = subprocess.check_output('diskutil list ' + diskName + ' | grep ' + volName, shell=True)
             except: return False
             else:
-                if volName == output.split()[2]: return True
+                if volName == output[33:57].strip(): return True
                 else: return False
