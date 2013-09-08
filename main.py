@@ -16,9 +16,9 @@ def main():
 
     # Part 1
     print 'Current working directory:', os.getcwd()
+
     for fileName in os.listdir(os.getcwd()):
         if '.dmg' in fileName[-4:].lower(): DMGFileList.append(fileName)
-
     DMGSizeDict = DiskUtil.getSizeForFiles(DMGFileList)
     print 'Found DMGs:', DMGSizeDict
     
@@ -45,13 +45,19 @@ def main():
     """sudo asr --source /Volumes/My\ Book\ VelociRaptor\ Duo/Users/apple/Desktop/Scripts/ASD/IMAGES/OS155.dmg --target /Volumes/OS155 --erase --noverify --noprompt"""
     
 # Hopefully this is perm
-    for disk, volName in DiskNameDict:
-        print volName, '('+disk+') will be erased:', not DiskUtil.diskHasVolume(disk, RPartName)
-        if 'yes' != raw_input('Proceed? (yes/NO) ').lower(): sys.exit(1)
-        if not DiskUtil.diskHasVolume(disk, RPartName):
-            subprocess.call('diskutil eraseDisk JHFS+ ' + RPartName + ' GPT ' + disk, shell=True)
+    for disk, MediaName in DiskNameDict:
         
-        print DiskUtil.getVolumeForDisk(disk)
-        	
+        diskVolumeList = DiskUtil.getVolumeForDisk(disk)
+        print 'On', MediaName, '('+disk+') found volumes:', diskVolumeList
+        
+        print MediaName, '('+disk+') will be erased:', not DiskUtil.diskHasVolume(disk, RPartName)
+        if 'yes' != raw_input('Proceed? (yes/NO) ').lower(): continue
+        if not DiskUtil.diskHasVolume(disk, RPartName):
+            subprocess.call(['diskutil', 'eraseDisk', 'JHFS+', RPartName, 'GPT', disk])
+        
+        for dmg in DMGFileList:
+            if dmg not in diskVolumeList:
+                print 'Will create new partition for', dmg
+            
 
 if __name__ == "__main__": main()
