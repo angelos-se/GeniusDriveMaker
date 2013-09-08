@@ -45,8 +45,7 @@ class MacDiskutil(object):
     def getInternalDisks(self):
         InternalDisks = []
         for dev in self.getWholeDisks():
-            try:
-                output = subprocess.check_output('diskutil info ' + dev+ ' | grep "Internal:"', shell=True)
+            try: output = subprocess.check_output('diskutil info ' + dev+ ' | grep "Internal:"', shell=True)
             except: raise
             else:
                 if 'Yes' in output: InternalDisks.append(dev)
@@ -63,8 +62,7 @@ class MacDiskutil(object):
 
     def getAppleRAIDSets(self):
         RAIDSets = []
-        try:
-            output =  subprocess.check_output('diskutil ar list | grep "Device Node" | awk \'{ print $3 }\'', shell=True).split()
+        try: output =  subprocess.check_output('diskutil ar list | grep "Device Node" | awk \'{ print $3 }\'', shell=True).split()
         except: raise
         else: 
             for RAIDSet in output:
@@ -80,8 +78,7 @@ class MacDiskutil(object):
     def getMountedImages(self):
         MountedDMGs = []
         for dev in self.getWholeDisks():
-            try:
-                output = subprocess.check_output('diskutil info ' + dev+ ' | grep "Protocol:"', shell=True)
+            try: output = subprocess.check_output('diskutil info ' + dev+ ' | grep "Protocol:"', shell=True)
             except: raise
             else:
                 if 'Disk Image' in output: MountedDMGs.append(dev)
@@ -89,8 +86,7 @@ class MacDiskutil(object):
 
     def getCoreStorageAllDisks(self):
         CoreStorageAllDisks = []
-        try:
-            output = subprocess.check_output('diskutil cs list | grep Disk', shell=True).split('Disk:')
+        try: output = subprocess.check_output('diskutil cs list | grep Disk', shell=True).split('Disk:')
         except: output = ''
         else:
             for CSDisk in output:
@@ -100,11 +96,9 @@ class MacDiskutil(object):
         return CoreStorageAllDisks
 
     def getMediaNameByDev(self, dev=""):
-        try:
-            output = subprocess.check_output('diskutil info ' + dev+ ' | grep "Media Name:"', shell=True)
+        try: output = subprocess.check_output('diskutil info ' + dev+ ' | grep "Media Name:"', shell=True)
         except: raise
-        else:
-            return output[output.find("Name:")+5:].strip()
+        else: return output[output.find("Name:")+5:].strip()
 
     def getMediaNameForList(self, devList=[]):
         MediaNameDict = {}
@@ -113,14 +107,11 @@ class MacDiskutil(object):
         return MediaNameDict
     
     def getSizeForFile(self, fileName=''):
-        if fileName == '':
-            raise InvalidParameter()
+        if fileName == '': raise InvalidParameter()
         else:
-            try:
-                output = subprocess.check_output(['ls', '-al', fileName])
+            try: output = subprocess.check_output(['ls', '-al', fileName])
             except: raise
-            else:
-                return int(output.split()[4])
+            else: return int(output.split()[4])
     
     def getSizeForFiles(self, fileList=[]):
         FileListDict = {}
@@ -128,22 +119,28 @@ class MacDiskutil(object):
             FileListDict[fileName] = self.getSizeForFile(fileName)
         return FileListDict
         
+    def getVolumeNameByDev(self, dev=''):
+        if dev == '': raise InvalidParameter()
+        else:
+            try: output = subprocess.check_output('diskutil info ' + dev + ' | grep "Volume Name:"', shell=True)
+            except: raise
+            else:
+                if 'no file system' in output: return None
+                else: return output[28:].strip()        
+        
     def getVolumeForDisk(self, diskName=''):
         VolumeList = {}
-        try:
-            output = subprocess.check_output(['diskutil', 'list', diskName])
+        try: output = subprocess.check_output(['diskutil', 'list', diskName])
         except: raise
         else:
             for line in output.split('\n'):
-                if 'Apple_HFS' in line: VolumeList[line[33:57].strip()] = line[67:].strip()
+                if 'Apple_HFS' in line: VolumeList[line[67:].strip()] = self.getVolumeNameByDev(line[67:].strip())
             return VolumeList
     
     def diskHasVolume(self, diskName='', volName=''):
-        if diskName == '' or volName == '':
-            raise InvalidParameter()
+        if diskName == '' or volName == '': raise InvalidParameter()
         else:
-            try:
-                output = subprocess.check_output('diskutil list ' + diskName + ' | grep ' + volName, shell=True)
+            try: output = subprocess.check_output('diskutil list ' + diskName + ' | grep ' + volName, shell=True)
             except: return False
             else:
                 if volName == output[33:57].strip(): return True
