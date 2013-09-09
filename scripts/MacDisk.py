@@ -152,7 +152,9 @@ class MacDiskutil(object):
         except: raise
         else:
             for line in output.split('\n'):
-                if 'Apple_HFS' in line: VolumeList[self.getVolumeNameByDev(line[67:].strip())] = line[67:].strip()
+                if 'Apple_HFS' in line: VolumeList[self.getVolumeNameByDev(line[line.find('disk'):]).strip()] = line[line.find('disk'):].strip()
+#                if 'Apple_HFS' in line: VolumeList[self.getVolumeNameByDev(line[67:].strip())] = line[67:].strip() # Need bug fix
+                # Line above not handling non-Latin volume name correctly
             return VolumeList
     
     def diskHasVolume(self, diskName='', volName=''):
@@ -166,8 +168,6 @@ class MacDiskutil(object):
 
     def EraseRestore(self, dev='', dmg=''):
         if dev == '' or dmg == '': raise InvalidParameter()
-        subprocess.check_call(['diskutil', 'eraseVolume', 'JHFS+', dmg[:-4], dev])
-        time.sleep(5)
         subprocess.check_call(['sudo', 'asr', '--source', dmg, '--target', '/dev/'+dev, '--erase', '--noverify', '--noprompt'])
         subprocess.check_call(['diskutil', 'rename', dev, dmg[:-4]])
 
@@ -178,6 +178,5 @@ class MacDiskutil(object):
         resize = str(resize)+'B'
         subprocess.check_call(['diskutil', 'eraseVolume', 'JHFS+', dmg[:-4], dev])
         subprocess.check_call(['diskutil', 'resizeVolume', dev, resize, 'JHFS+', NewPart, '1B'])
-        time.sleep(5)
         subprocess.check_call(['sudo', 'asr', '--source', dmg, '--target', '/dev/'+dev, '--erase', '--noverify', '--noprompt'])
         subprocess.check_call(['diskutil', 'rename', dev, dmg[:-4]])
