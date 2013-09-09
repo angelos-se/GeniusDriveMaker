@@ -126,6 +126,19 @@ class MacDiskutil(object):
             FileListDict[fileName] = self.getSizeForFile(fileName)
         return FileListDict
 
+    def getSizeForDMG(self, dmgName=''):
+        if dmgName == '': raise InvalidParameter()
+        else:
+            try: output = subprocess.check_output('hdiutil imageinfo "'+dmgName+'" | grep "Total Bytes:"', shell=True)
+            except: raise
+            else: return int(output[output.find(':')+1:])
+
+    def getSizeForDMGs(self, dmgList=[]):
+        dmgListDict = {}
+        for dmgName in dmgList:
+            dmgListDict[dmgName] = self.getSizeForDMG(dmgName)
+        return dmgListDict
+
     def getDiskByMediaName(self, MediaName=''):
         if MediaName == '': raise InvalidParameter()
         else:
@@ -172,10 +185,11 @@ class MacDiskutil(object):
 
     def EraseResizeRestore(self, dev='', dmg='', resize=0, NewPart='', minResize=873378792):
         if dev == '' or dmg == '' or NewPart == '': raise InvalidParameter()
-        if self.getSizeForDev(dev) * 0.0004367 > minResize: minResize = self.getSizeForDev(dev) * 0.0004367
-        if resize < minResize: resize = minResize
+#        if self.getSizeForDev(dev) * 0.0004367 > minResize: minResize = self.getSizeForDev(dev) * 0.0004367
+#        if resize < minResize: resize = minResize
         resize = str(resize)+'B'
-        subprocess.check_call(['diskutil', 'eraseVolume', 'JHFS+', dmg[:-4], dev])
-        subprocess.check_call(['diskutil', 'resizeVolume', dev, resize, 'JHFS+', NewPart, '1B'])
+        subprocess.check_call(['diskutil', 'splitPartition', dev, '2', 'JHFS+', dmg[:-4], resize, 'JHFS+', NewPart, '1B'])
+#        subprocess.check_call(['diskutil', 'eraseVolume', 'JHFS+', dmg[:-4], dev])
+#        subprocess.check_call(['diskutil', 'resizeVolume', dev, resize, 'JHFS+', NewPart, '1B'])
         subprocess.check_call(['sudo', 'asr', '--source', dmg, '--target', '/dev/'+dev, '--erase', '--noverify', '--noprompt'])
         subprocess.check_call(['diskutil', 'rename', dev, dmg[:-4]])

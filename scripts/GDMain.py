@@ -22,7 +22,7 @@ def main():
     for fileName in os.listdir(os.getcwd()):
         if '.dmg' in fileName[-4:].lower(): DMGFileList.append(fileName)
     if len(DMGFileList) == 0: sys.exit("No DMG found, running from the wrong directory?")
-    DMGSizeDict = DiskUtil.getSizeForFiles(DMGFileList)
+    DMGSizeDict = DiskUtil.getSizeForDMGs(DMGFileList)
     print 'Found DMGs:', DMGSizeDict
     
     # Part 2
@@ -60,7 +60,7 @@ def main():
                     diskVolumeDict = DiskUtil.getVolumesForDisk(disk)
                 else:
                     print '* Adding', dmg[:-4], 'to', MediaName, '('+disk+')'
-                    DiskUtil.EraseResizeRestore(diskVolumeDict[RPartName], dmg, DMGSizeDict[dmg]*3, RPartName) # Using some very large partitons here… =_=||
+                    DiskUtil.EraseResizeRestore(diskVolumeDict[RPartName], dmg, DMGSizeDict[dmg]*1.1, RPartName)
                     diskVolumeDict = DiskUtil.getVolumesForDisk(disk)
             
 
