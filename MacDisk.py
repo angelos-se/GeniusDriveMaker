@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import os, sys, subprocess, pickle
+import os, sys, subprocess, time
 import xml.etree.ElementTree as plist
 
 class UnexpectedOutput(Exception): pass
@@ -106,6 +106,13 @@ class MacDiskutil(object):
             MediaNameDict[dev] = self.getMediaNameByDev(dev)
         return MediaNameDict
     
+    def getSizeForDev(self, dev=''):
+        if dev == '': raise InvalidParameter()
+        else:
+            try: output = subprocess.check_output('diskutil info ' + dev + ' | grep "Total Size:"', shell=True)
+            except: raise
+            else: return int(output[output.find('(')+1:output.rfind('Bytes)')])
+    
     def getSizeForFile(self, fileName=''):
         if fileName == '': raise InvalidParameter()
         else:
@@ -118,7 +125,18 @@ class MacDiskutil(object):
         for fileName in fileList:
             FileListDict[fileName] = self.getSizeForFile(fileName)
         return FileListDict
-        
+
+    def getDiskByMediaName(self, MediaName=''):
+        if MediaName == '': raise InvalidParameter()
+        else:
+            MatchedDisks = []
+            for dev in self.getWholeDisks():
+                try: output = subprocess.check_output('diskutil info ' + dev+ ' | grep "Media Name:"', shell=True)
+                except: raise
+                else:
+                    if output[28:].strip() in MediaName: MatchedDisks.append(dev)
+            return MatchedDisks
+            
     def getVolumeNameByDev(self, dev=''):
         if dev == '': raise InvalidParameter()
         else:
@@ -128,13 +146,13 @@ class MacDiskutil(object):
                 if 'no file system' in output: return None
                 else: return output[28:].strip()        
         
-    def getVolumeForDisk(self, diskName=''):
+    def getVolumesForDisk(self, diskName=''):
         VolumeList = {}
         try: output = subprocess.check_output(['diskutil', 'list', diskName])
         except: raise
         else:
             for line in output.split('\n'):
-                if 'Apple_HFS' in line: VolumeList[line[67:].strip()] = self.getVolumeNameByDev(line[67:].strip())
+                if 'Apple_HFS' in line: VolumeList[self.getVolumeNameByDev(line[67:].strip())] = line[67:].strip()
             return VolumeList
     
     def diskHasVolume(self, diskName='', volName=''):
@@ -145,3 +163,21 @@ class MacDiskutil(object):
             else:
                 if volName == output[33:57].strip(): return True
                 else: return False
+
+    def EraseRestore(self, dev='', dmg=''):
+        if dev == '' or dmg == '': raise InvalidParameter()
+        subprocess.check_call(['diskutil', 'eraseVolume', 'JHFS+', dmg[:-4], dev])
+        time.sleep(5)
+        subprocess.check_call(['sudo', 'asr', '--source', dmg, '--target', '/dev/'+dev, '--erase', '--noverify', '--noprompt'])
+        subprocess.check_call(['diskutil', 'rename', dev, dmg[:-4]])
+
+    def EraseResizeRestore(self, dev='', dmg='', resize=0, NewPart='', minResize=873378792):
+        if dev == '' or dmg == '' or NewPart == '': raise InvalidParameter()
+        if self.getSizeForDev(dev) * 0.0004367 > minResize: minResize = self.getSizeForDev(dev) * 0.0004367
+        if resize < minResize: resize = minResize
+        resize = str(resize)+'B'
+        subprocess.check_call(['diskutil', 'eraseVolume', 'JHFS+', dmg[:-4], dev])
+        subprocess.check_call(['diskutil', 'resizeVolume', dev, resize, 'JHFS+', NewPart, '1B'])
+        time.sleep(5)
+        subprocess.check_call(['sudo', 'asr', '--source', dmg, '--target', '/dev/'+dev, '--erase', '--noverify', '--noprompt'])
+        subprocess.check_call(['diskutil', 'rename', dev, dmg[:-4]])

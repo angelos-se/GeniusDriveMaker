@@ -1,17 +1,17 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import os, sys, subprocess, pickle
+import os, sys, subprocess
 from MacDisk import *
 
 def main():
     RPartName = 'Reserved'
     DMGFileList = []
 
-#    IgnoreList = ['disk3']
-    IgnoreList = []
+    IgnoreList = ['disk99']
+    IgnoreMediaList = ['Hitachi HTS543216L9SA02 Media']
 
     # Part 0
-    DiskUtil = MacDiskutil()
+    DiskUtil = MacDiskutil() # Required for most of diskutil operation
 	# Includes version check during class initialization, defaults: (reqOSXVer='10.7.0', PyVer='2.7')
 
     # Part 1
@@ -25,6 +25,7 @@ def main():
     # Part 2
     DiskList = DiskUtil.getWholeDisks()
     IgnoreList.extend(DiskUtil.getInternalDisks())
+    IgnoreList.extend(DiskUtil.getDiskByMediaName(IgnoreMediaList))
     IgnoreList.extend(DiskUtil.getAppleRAIDAll())
     # There are other options for RAID, see MacDisk module for details
     IgnoreList.extend(DiskUtil.getMountedImages())
@@ -47,17 +48,27 @@ def main():
 # Hopefully this is perm
     for disk, MediaName in DiskNameDict:
         
-        diskVolumeList = DiskUtil.getVolumeForDisk(disk)
-        print 'On', MediaName, '('+disk+') found volumes:', diskVolumeList
+        diskVolumeDict = DiskUtil.getVolumesForDisk(disk)
+        print 'On', MediaName, '('+disk+') found volumes:', diskVolumeDict
         
-        print MediaName, '('+disk+') will be erased:', not DiskUtil.diskHasVolume(disk, RPartName)
-        if 'yes' != raw_input('Proceed? (yes/NO) ').lower(): continue
+#        print MediaName, '('+disk+') will be erased:', not DiskUtil.diskHasVolume(disk, RPartName)
         if not DiskUtil.diskHasVolume(disk, RPartName):
-            subprocess.call(['diskutil', 'eraseDisk', 'JHFS+', RPartName, 'GPT', disk])
+            print MediaName, '('+disk+') will be erased.'
+            if 'yes' != raw_input('Proceed? (yes/NO) ').lower(): continue # #Prompt
+            if not DiskUtil.diskHasVolume(disk, RPartName):
+                subprocess.call(['diskutil', 'eraseDisk', 'JHFS+', RPartName, 'GPT', disk])
+                diskVolumeDict = DiskUtil.getVolumesForDisk(disk)    
         
         for dmg in DMGFileList:
-            if dmg not in diskVolumeList:
-                print 'Will create new partition for', dmg
+            if dmg[:-4] not in diskVolumeDict:
+                if 'x'+dmg[:-4] in diskVolumeDict:
+                    print '* x'+dmg[:-4], 'marked for erase & restore'
+                    DiskUtil.EraseRestore(diskVolumeDict['x'+dmg[:-4]], dmg)
+                    diskVolumeDict = DiskUtil.getVolumesForDisk(disk)
+                else:
+                    print '* Adding', dmg[:-4], 'to', MediaName, '('+disk+')'
+                    DiskUtil.EraseResizeRestore(diskVolumeDict[RPartName], dmg, DMGSizeDict[dmg]*2, RPartName)
+                    diskVolumeDict = DiskUtil.getVolumesForDisk(disk)
             
 
 if __name__ == "__main__": main()
