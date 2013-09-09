@@ -60,7 +60,7 @@ def main():
                     diskVolumeDict = DiskUtil.getVolumesForDisk(disk)
                 else:
                     print '* Adding', dmg[:-4], 'to', MediaName, '('+disk+')'
-                    DiskUtil.EraseResizeRestore(diskVolumeDict[RPartName], dmg, DMGSizeDict[dmg]*1.1, RPartName)
+                    DiskUtil.EraseResizeRestore(diskVolumeDict[RPartName], dmg, DMGSizeDict[dmg], RPartName)
                     diskVolumeDict = DiskUtil.getVolumesForDisk(disk)
             
 
