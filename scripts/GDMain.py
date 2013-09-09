@@ -9,7 +9,7 @@ def main():
 
     # The following is just an example, disk0 is usually automatically ignored when booted from internal disk. If you have disk drives that you want to protect, add the name to IgnoreMediaList and the drive will be automatically excluded.
     IgnoreList = ['disk98', 'disk99']
-    IgnoreMediaList = ['Hitachi HTS543216L9SA02 Media', 'ADATA USB Flash Drive Media']
+    IgnoreMediaList = ['ADATA USB Flash Drive Media']
 
     # Part 0
     DiskUtil = MacDiskutil() # Required for most of diskutil operation
@@ -46,7 +46,8 @@ def main():
 
         if not DiskUtil.diskHasVolume(disk, RPartName):
             print MediaName, '('+disk+') will be erased.'
-            if 'yes' != raw_input('Proceed? (yes/NO) ').lower(): continue # #Prompt
+            if not DiskUtil.diskHasVolume(disk, 'x'+RPartName):
+                if 'yes' != raw_input('Proceed? (yes/NO) ').lower(): continue # #Prompt
             if not DiskUtil.diskHasVolume(disk, RPartName):
                 subprocess.call(['diskutil', 'eraseDisk', 'JHFS+', RPartName, 'GPT', disk])
                 diskVolumeDict = DiskUtil.getVolumesForDisk(disk)    
@@ -59,7 +60,7 @@ def main():
                     diskVolumeDict = DiskUtil.getVolumesForDisk(disk)
                 else:
                     print '* Adding', dmg[:-4], 'to', MediaName, '('+disk+')'
-                    DiskUtil.EraseResizeRestore(diskVolumeDict[RPartName], dmg, DMGSizeDict[dmg]*2, RPartName)
+                    DiskUtil.EraseResizeRestore(diskVolumeDict[RPartName], dmg, DMGSizeDict[dmg]*3, RPartName) # Using some very large partitons here… =_=||
                     diskVolumeDict = DiskUtil.getVolumesForDisk(disk)
             
 

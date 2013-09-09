@@ -153,8 +153,7 @@ class MacDiskutil(object):
         else:
             for line in output.split('\n'):
                 if 'Apple_HFS' in line: VolumeList[self.getVolumeNameByDev(line[line.find('disk'):]).strip()] = line[line.find('disk'):].strip()
-#                if 'Apple_HFS' in line: VolumeList[self.getVolumeNameByDev(line[67:].strip())] = line[67:].strip() # Need bug fix
-                # Line above not handling non-Latin volume name correctly
+                # Line above may not be handling non-Latin volume name correctly
             return VolumeList
     
     def diskHasVolume(self, diskName='', volName=''):
