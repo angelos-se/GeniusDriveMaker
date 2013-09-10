@@ -182,14 +182,14 @@ class MacDiskutil(object):
         if dev == '' or dmg == '': raise InvalidParameter()
         subprocess.check_call(['sudo', 'asr', '--source', dmg, '--target', '/dev/'+dev, '--erase', '--noverify', '--noprompt'])
         subprocess.check_call(['diskutil', 'rename', dev, dmg[:-4]])
+        try: subprocess.check_call(['sudo', 'bless', '--device', '/dev/'+dev, '-label', dmg[:-4]])
+        except: pass
 
     def EraseResizeRestore(self, dev='', dmg='', resize=0, NewPart='', minResize=873378792):
         if dev == '' or dmg == '' or NewPart == '': raise InvalidParameter()
-#        if self.getSizeForDev(dev) * 0.0004367 > minResize: minResize = self.getSizeForDev(dev) * 0.0004367
-#        if resize < minResize: resize = minResize
         resize = str(resize)+'B'
         subprocess.check_call(['diskutil', 'splitPartition', dev, '2', 'JHFS+', dmg[:-4], resize, 'JHFS+', NewPart, '1B'])
-#        subprocess.check_call(['diskutil', 'eraseVolume', 'JHFS+', dmg[:-4], dev])
-#        subprocess.check_call(['diskutil', 'resizeVolume', dev, resize, 'JHFS+', NewPart, '1B'])
         subprocess.check_call(['sudo', 'asr', '--source', dmg, '--target', '/dev/'+dev, '--erase', '--noverify', '--noprompt'])
         subprocess.check_call(['diskutil', 'rename', dev, dmg[:-4]])
+        try: subprocess.check_call(['sudo', 'bless', '--device', '/dev/'+dev, '-label', dmg[:-4]])
+        except: pass
