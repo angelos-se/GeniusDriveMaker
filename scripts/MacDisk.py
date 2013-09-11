@@ -150,6 +150,14 @@ class MacDiskutil(object):
                     if output[28:].strip() in MediaName: MatchedDisks.append(dev)
             return MatchedDisks
             
+    def getMountPointByDev(self, dev=''):
+        if dev == '': raise InvalidParameter()
+        else:
+            try: output = subprocess.check_output('diskutil info ' + dev + ' | grep "Mount Point:"', shell=True)
+            except: return None
+            else:
+                return output[output.find('Point:')+6:].strip()
+            
     def getVolumeNameByDev(self, dev=''):
         if dev == '': raise InvalidParameter()
         else:
@@ -157,15 +165,15 @@ class MacDiskutil(object):
             except: raise
             else:
                 if 'no file system' in output: return None
-                else: return output[28:].strip()        
-        
+                else: return output[28:].strip()
+
     def getVolumesForDisk(self, diskName=''):
         VolumeList = {}
         try: output = subprocess.check_output(['diskutil', 'list', diskName])
         except: raise
         else:
             for line in output.split('\n'):
-                if 'Apple_HFS' in line: VolumeList[self.getVolumeNameByDev(line[line.find('disk'):]).strip()] = line[line.find('disk'):].strip()
+                if 'Apple_HFS' in line or 'FAT' in line: VolumeList[self.getVolumeNameByDev(line[line.find('disk'):]).strip()] = line[line.find('disk'):].strip()
                 # Line above may not be handling non-Latin volume name correctly
             return VolumeList
     
@@ -178,18 +186,28 @@ class MacDiskutil(object):
                 if volName == output[33:57].strip(): return True
                 else: return False
 
+    def VerifyVolume(self, dev='', dmg=''):
+        if dev == '': raise InvalidParameter()
+        try: subprocess.check_call(['sudo', 'diskutil', 'unmount', dev])
+        except: pass
+        try: fsck = subprocess.check_call(['sudo', 'fsck_hfs', '-fry', '/dev/'+dev])
+        except: print '* Could not complete fsck for', dev
+
     def EraseRestore(self, dev='', dmg=''):
         if dev == '' or dmg == '': raise InvalidParameter()
         subprocess.check_call(['sudo', 'asr', '--source', dmg, '--target', '/dev/'+dev, '--erase', '--noverify', '--noprompt'])
         subprocess.check_call(['diskutil', 'rename', dev, dmg[:-4]])
-        try: subprocess.check_call(['sudo', 'bless', '--device', '/dev/'+dev, '-label', dmg[:-4]])
+#        try: subprocess.check_call(['sudo', 'bless', '--device', '/dev/'+dev, '-label', dmg[:-4]])
+        try: subprocess.check_call(['sudo', 'bless', '--folder', self.getMountPointByDev(dev), '-label', dmg[:-4]])
         except: pass
 
-    def EraseResizeRestore(self, dev='', dmg='', resize=0, NewPart='', minResize=873378792):
+    def SplitRestore(self, dev='', dmg='', resize=0, MaxResize=0, NewPart=''):
         if dev == '' or dmg == '' or NewPart == '': raise InvalidParameter()
+        if MaxResize != 0 and resize > MaxResize: resize = MaxResize
         resize = str(resize)+'B'
         subprocess.check_call(['diskutil', 'splitPartition', dev, '2', 'JHFS+', dmg[:-4], resize, 'JHFS+', NewPart, '1B'])
         subprocess.check_call(['sudo', 'asr', '--source', dmg, '--target', '/dev/'+dev, '--erase', '--noverify', '--noprompt'])
         subprocess.check_call(['diskutil', 'rename', dev, dmg[:-4]])
-        try: subprocess.check_call(['sudo', 'bless', '--device', '/dev/'+dev, '-label', dmg[:-4]])
+#        try: subprocess.check_call(['sudo', 'bless', '--device', '/dev/'+dev, '-label', dmg[:-4]])
+        try: subprocess.check_call(['sudo', 'bless', '--folder', self.getMountPointByDev(dev), '-label', dmg[:-4]])
         except: pass
