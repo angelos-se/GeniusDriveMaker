@@ -3,11 +3,22 @@
 import os, sys, subprocess
 from MacDisk import *
 
+def alert():
+    NullDev = open('/dev/null', 'wb')
+    try: output = subprocess.check_output(['afplay', '/Applications/iTunes.app/Contents/Resources/complete.aif'], stderr=NullDev)
+    except: pass
+    try: output = subprocess.check_output(['say', '--voice=Serena', 'Finished Imaging.'], stderr=NullDev)
+    except: pass
+
 def main():
+    MaxPartSize = 30000000000
+    # To avoid DMG that has allocated too much space consuming too much on disk space set MaxPartSize = 0 to disable this variable
+    DMGSizeMultiplier = 1
+    # To adjust how much more space than allocated by the DMG should be allocated to volumes
     RPartName = 'GDMRsvd'
     # Spare space on disk will be named using string RPartName, this is also used to identify drives formatted using Genius Drive Maker
 
-    # The following is just an example, disk0 is usually automatically ignored when booted from internal disk. If you have disk drives that you want to protect, add the name to IgnoreMediaList and the drive will be automatically excluded.
+    # The following are just examples, disk0 is usually automatically ignored when booted from internal disk. If you have disk drives that you want to protect, add the name to IgnoreMediaList and the drive will be automatically excluded.
     IgnoreList = ['disk98', 'disk99']
     IgnoreMediaList = ['ADATA USB Flash Drive Media']
 
@@ -40,7 +51,6 @@ def main():
     DiskNameDict = DiskUtil.getMediaNameForList(DiskList).iteritems()
 
     for disk, MediaName in DiskNameDict:
-        
         diskVolumeDict = DiskUtil.getVolumesForDisk(disk)
         print 'On', MediaName, '('+disk+') found volumes:', diskVolumeDict
 
@@ -60,8 +70,17 @@ def main():
                     diskVolumeDict = DiskUtil.getVolumesForDisk(disk)
                 else:
                     print '* Adding', dmg[:-4], 'to', MediaName, '('+disk+')'
-                    DiskUtil.EraseResizeRestore(diskVolumeDict[RPartName], dmg, DMGSizeDict[dmg], RPartName)
+                    DiskUtil.SplitRestore(diskVolumeDict[RPartName], dmg, DMGSizeDict[dmg]*DMGSizeMultiplier, MaxPartSize, RPartName)
                     diskVolumeDict = DiskUtil.getVolumesForDisk(disk)
-            
+            else: DiskUtil.VerifyVolume(diskVolumeDict[dmg[:-4]], dmg)
+
+    alert()
+    if 'y' in raw_input('Eject all disks? (yes/NO) ').lower():
+        print 'Ejecting disks...'
+        for disk, MediaName in DiskUtil.getMediaNameForList(DiskList).iteritems():
+            try: subprocess.check_output(['sudo', 'diskutil', 'eject', disk])
+            except: raise
+        print 'Done!'
+                    
 
 if __name__ == "__main__": main()
